@@ -34,3 +34,13 @@ CREATE TABLE video_sellings (
 	created_at timestamp WITH time ZONE
 );
 ```
+
+```
+CREATE TABLE referrer_sellings (
+	id serial PRIMARY KEY NOT NULL,
+	referrer text,
+	product_id text,
+	amount bigint,
+	created_at timestamp WITH time ZONE
+);
+```
