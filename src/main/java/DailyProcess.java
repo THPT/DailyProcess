@@ -34,7 +34,7 @@ public class DailyProcess {
 			@Override
 			public String call(Row row) throws Exception {
 				System.out.println("'" + (String) row.get(0) + "'");
-				return "'" + (String) row.get(0) + "','" + (String) row.get(1) + "'";
+				return "'" + (String) row.get(0) + "','" + (Long) row.get(1) + "'";
 			}
 		});
 
