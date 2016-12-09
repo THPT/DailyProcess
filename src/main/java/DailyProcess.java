@@ -56,7 +56,153 @@ public class DailyProcess {
 		}
 		try {
 			connection.createStatement();
-			String q = String.format("INSERT INTO device_usages(device_family, time_usage,  created_at) VALUES %s", values);
+			String q = String.format("INSERT INTO device_usages(device_family, time_usage,  created_at) VALUES %s",
+					values);
+			System.out.println(q);
+			PreparedStatement stm = connection.prepareStatement(q);
+			stm.execute();
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void exportDailyDeviceSellingItem(SparkSession spark) {
+		long currentDate = new DateTime().withTimeAtStartOfDay().getMillis() / 1000;
+		long hourBefore = currentDate - 24 * 3600;
+		String query = "select device_family, product_id, count(*) from events WHERE created_at >= " + hourBefore
+				+ " AND created_at <= " + currentDate + " AND metric = 'order' group by device_family, product_id";
+		System.out.println(query);
+		Dataset<Row> uuids = spark.sql(query);
+
+		JavaRDD<Row> rdd = uuids.javaRDD();
+		JavaRDD<String> rddStr = rdd.map(new Function<Row, String>() {
+
+			@Override
+			public String call(Row row) throws Exception {
+				System.out.println("'" + (String) row.get(0) + "'");
+				return "'" + (String) row.get(0) + "','" + (String) row.get(1) + "','" + (Long) row.get(2) + "'";
+			}
+		});
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		String date = sdf.format(new Date(currentDate * 1000));
+		Iterator<String> iterator = rddStr.toLocalIterator();
+		StringBuilder sb = new StringBuilder();
+		while (iterator.hasNext()) {
+			String n = (String) iterator.next();
+			if (sb.length() > 0)
+				sb.append(',');
+			sb.append("(").append(n).append(",'").append(date).append("')");
+
+		}
+
+		String values = sb.toString();
+		if (values.length() == 0) {
+			return;
+		}
+		try {
+			connection.createStatement();
+			String q = String.format("INSERT INTO device_sellings(device_family, product_id, amount, created_at) VALUES %s", values);
+			System.out.println(q);
+			PreparedStatement stm = connection.prepareStatement(q);
+			stm.execute();
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void exportDailyVideoCategorySelling(SparkSession spark) {
+		long currentDate = new DateTime().withTimeAtStartOfDay().getMillis() / 1000;
+		long hourBefore = currentDate - 24 * 3600;
+
+		String query = "select video.category, sum(selling_order.revenue) " + "from events "
+				+ "join video on video.video_id = events.video_id "
+				+ "join selling_order on selling_order.order_id = events.order_id " + "WHERE created_at >= "
+				+ hourBefore + " AND created_at <= " + currentDate + " AND metric = 'order' "
+				+ "group by video.category";
+		System.out.println(query);
+		Dataset<Row> uuids = spark.sql(query);
+
+		JavaRDD<Row> rdd = uuids.javaRDD();
+		JavaRDD<String> rddStr = rdd.map(new Function<Row, String>() {
+
+			@Override
+			public String call(Row row) throws Exception {
+				System.out.println("'" + (String) row.get(0) + "'");
+				return "'" + (String) row.get(0) + "','" + (Long) row.get(1) + "'";
+			}
+		});
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		String date = sdf.format(new Date(currentDate * 1000));
+		Iterator<String> iterator = rddStr.toLocalIterator();
+		StringBuilder sb = new StringBuilder();
+		while (iterator.hasNext()) {
+			String n = (String) iterator.next();
+			if (sb.length() > 0)
+				sb.append(',');
+			sb.append("(").append(n).append(",'").append(date).append("')");
+
+		}
+
+		String values = sb.toString();
+		if (values.length() == 0) {
+			return;
+		}
+		try {
+			connection.createStatement();
+			String q = String.format("INSERT INTO video_category_sellings(category, revenue, created_at) VALUES %s",
+					values);
+			System.out.println(q);
+			PreparedStatement stm = connection.prepareStatement(q);
+			stm.execute();
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void exportDailyReferrerSiteSellingItem(SparkSession spark) {
+		long currentDate = new DateTime().withTimeAtStartOfDay().getMillis() / 1000;
+		long hourBefore = currentDate - 24 * 3600;
+
+		String query = "select referrer, product_id, count(*) from events WHERE created_at >= " + hourBefore
+				+ " AND created_at <= " + currentDate + " AND metric = 'order' group by referrer, product_id";
+		System.out.println(query);
+		Dataset<Row> uuids = spark.sql(query);
+
+		JavaRDD<Row> rdd = uuids.javaRDD();
+		JavaRDD<String> rddStr = rdd.map(new Function<Row, String>() {
+
+			@Override
+			public String call(Row row) throws Exception {
+				System.out.println("'" + (String) row.get(0) + "'");
+				return "'" + (String) row.get(0) + "','" + (String) row.get(1) + "','" + (Long) row.get(2) + "'";
+			}
+		});
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		String date = sdf.format(new Date(currentDate * 1000));
+		Iterator<String> iterator = rddStr.toLocalIterator();
+		StringBuilder sb = new StringBuilder();
+		while (iterator.hasNext()) {
+			String n = (String) iterator.next();
+			if (sb.length() > 0)
+				sb.append(',');
+			sb.append("(").append(n).append(",'").append(date).append("')");
+
+		}
+
+		String values = sb.toString();
+		if (values.length() == 0) {
+			return;
+		}
+		try {
+			connection.createStatement();
+			String q = String.format("INSERT INTO video_category_sellings(referrer, product_id, amount, created_at) VALUES %s",
+					values);
 			System.out.println(q);
 			PreparedStatement stm = connection.prepareStatement(q);
 			stm.execute();
@@ -80,6 +226,8 @@ public class DailyProcess {
 		spark.sql("show tables").show();
 
 		exportDailyDeviceUsage(spark);
+		exportDailyDeviceSellingItem(spark);
+		exportDailyVideoCategorySelling(spark); 
 
 	}
 }
